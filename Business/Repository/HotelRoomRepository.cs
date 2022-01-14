@@ -111,5 +111,10 @@ namespace Business.Repository
                 return null;
             }
         }
+
+        Task<HotelRoomDTO> IHotelRoomRepository.DeleteHotelRoom(int roomId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
