@@ -1,43 +1,46 @@
 ﻿@page "/hotel-room/create"
+@page "/hotel-room/edit/{Id:int}"
+
 @using Models
 @using Business.Repository.IRepository
 @inject IHotelRoomRepository HotelRoomRepository
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
-<div class = "row mt-2 mb-5">
-    <h3 class = "card-title text-info mb-3 ml-3">@Title Hotel Room</h3>
-    <div class = "col-md-12">
-        <div class = "card">
-            <div class = "card-body">
-                <EditForm Model = "HotelRoomModel" OnValidSubmit = "HandleHotelRoomUpsert">
-                    <DataAnnotationsValidator/>
+<div class="row mt-2 mb-5">
+    <h3 class="card-title text-info mb-3 ml-3">@Title Hotel Room</h3>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="HotelRoomModel" OnValidSubmit="HandleHotelRoomUpsert">
+                    <DataAnnotationsValidator />
                     @*<ValidationSummary/>*@
-                    <div class = "form-group">
+                    <div class="form-group">
                         <label>Name</label>
-                        <InputText @bind-Value = "HotelRoomModel.Name" class = "form-control"></InputText>
-                        <ValidationMessage For = "() => HotelRoomModel.Name"></ValidationMessage>
+                        <InputText @bind-Value="HotelRoomModel.Name" class="form-control"></InputText>
+                        <ValidationMessage For="() => HotelRoomModel.Name"></ValidationMessage>
                     </div>
-                    <div class = "form-group">
+                    <div class="form-group">
                         <label>Occupancy</label>
-                        <InputNumber @bind-Value = "HotelRoomModel.Occupancy" class = "form-control"></InputNumber>
-                        <ValidationMessage For = "() => HotelRoomModel.Occupancy"></ValidationMessage>
+                        <InputNumber @bind-Value="HotelRoomModel.Occupancy" class="form-control"></InputNumber>
+                        <ValidationMessage For="() => HotelRoomModel.Occupancy"></ValidationMessage>
                     </div>
-                    <div class = "form-group">
+                    <div class="form-group">
                         <label>Rate</label>
-                        <InputNumber @bind-Value = "HotelRoomModel.RegularRate" class = "form-control"></InputNumber>
-                        <ValidationMessage For = "() => HotelRoomModel.RegularRate"></ValidationMessage>
+                        <InputNumber @bind-Value="HotelRoomModel.RegularRate" class="form-control"></InputNumber>
+                        <ValidationMessage For="() => HotelRoomModel.RegularRate"></ValidationMessage>
                     </div>
-                    <div class = "form-group">
+                    <div class="form-group">
                         <label>Sq ft.</label>
-                        <InputText @bind-Value = "HotelRoomModel.SqFt" class = "form-control"></InputText>
+                        <InputText @bind-Value="HotelRoomModel.SqFt" class="form-control"></InputText>
                     </div>
-                    <div class = "form-group">
+                    <div class="form-group">
                         <label>Details</label>
-                        <InputTextArea @bind-Value = "HotelRoomModel.Details" class = "form-control"></InputTextArea>
+                        <InputTextArea @bind-Value="HotelRoomModel.Details" class="form-control"></InputTextArea>
                     </div>
-                    <div class = "form-group">
-                        <button class = "btn btn-primary">@Title Room</button>
-                        <NavLink href = "hotel-room" class = "btn btn-secondary">Back to Index</NavLink>
+                    <div class="form-group">
+                        <button class="btn btn-primary">@Title Room</button>
+                        <NavLink href="hotel-room" class="btn btn-secondary">Back to Index</NavLink>
                     </div>
                 </EditForm>
             </div>
@@ -46,18 +49,56 @@
 </div>
 
 @code {
+
+    [Parameter]
+    public int? Id { get; set; }
+
     private HotelRoomDTO HotelRoomModel { get; set; } = new HotelRoomDTO();
     private string Title { get; set; } = "Create";
 
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != null)
+        {
+            // updating
+            Title = "Update";
+            HotelRoomModel = await HotelRoomRepository.GetHotelRoom(Id.Value);
+        }
+        else
+        {
+            // create
+            HotelRoomModel = new HotelRoomDTO();
+        }
+    }
+
     private async Task HandleHotelRoomUpsert()
     {
-        var roomDetailsByName = await HotelRoomRepository.IsRoomUnique(HotelRoomModel.Name);
-        if (roomDetailsByName != null)
+        try
         {
-            // there is duplicate room show error
-            return;
+            var roomDetailsByName = await HotelRoomRepository.IsRoomUnique(HotelRoomModel.Name, HotelRoomModel.Id);
+            if (roomDetailsByName != null)
+            {
+                await JsRuntime.ToastrError("Room name already exists.");
+                return;
+            }
+            if (HotelRoomModel.Id != 0 && Title == "Update")
+            {
+                //update
+                var updateRoomResult = await HotelRoomRepository.UpdateHotelRoom(HotelRoomModel.Id, HotelRoomModel);
+                await JsRuntime.ToastrSuccess("Hotel room updated successfully.");
+            }
+            else
+            {
+                //create
+                var createResult = await HotelRoomRepository.CreateHotelRoom(HotelRoomModel);
+                await JsRuntime.ToastrSuccess("Hotel room created successfully.");
+            }
         }
-        var createResult = await HotelRoomRepository.CreateHotelRoom(HotelRoomModel);
+        catch (Exception ex)
+        {
+            //log exceptions
+        }
+
         NavigationManager.NavigateTo("hotel-room");
     }
 }
