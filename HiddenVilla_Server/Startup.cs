@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Business.Repository.IRepository;
 using Business.Repository;
+using HiddenVilla_Server.Service;
+using HiddenVilla_Server.Service.IService;
 
 namespace HiddenVilla_Server
 {
@@ -36,7 +38,10 @@ namespace HiddenVilla_Server
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddScoped<IHotelRoomRepository, HotelRoomRepository>();
+            services.AddScoped<IHotelImagesRepository, HotelImagesRepository>();
+            services.AddScoped<IFileUpload, FileUpload>();
             services.AddRazorPages();
+            services.AddHttpContextAccessor();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
         }
